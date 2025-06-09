@@ -1,0 +1,76 @@
+services:
+  valkey-master:
+    image: valkey/valkey:8
+    command: valkey-server
+    container_name: "valkey-master"
+    ports:
+      - 6379:6379
+    networks:
+      - valkey-net
+
+  valkey-slave-1:
+    image: valkey/valkey:8
+    command: valkey-server --slaveof valkey-master 6379
+    links:
+      - valkey-master
+    container_name: "valkey-slave1"
+    ports:
+      - 6380:6379
+    networks:
+      - valkey-net
+
+  valkey-slave-2:
+    image: valkey/valkey:8
+    command: valkey-server --slaveof valkey-master 6379
+    links:
+      - valkey-master
+    container_name: "valkey-slave2"
+    ports:
+      - 6381:6379
+    networks:
+      - valkey-net
+
+  sentinel-1:
+    build: sentinel
+    ports:
+      - "5000:26379"
+    env_file:
+      - .env
+    depends_on:
+      - valkey-master
+      - valkey-slave-1
+      - valkey-slave-2
+    container_name: "sentinel1"
+    networks:
+      - valkey-net
+
+  sentinel-2:
+    build: sentinel
+    ports:
+      - "5001:26379"
+    env_file:
+      - .env
+    depends_on:
+      - valkey-master
+      - valkey-slave-1
+      - valkey-slave-2
+    container_name: "sentinel2"
+    networks:
+      - valkey-net
+
+  sentinel-3:
+    build: sentinel
+    ports:
+      - "5002:26379"
+    env_file:
+      - .env
+    depends_on:
+      - valkey-master
+      - valkey-slave-1
+      - valkey-slave-2
+    container_name: "sentinel3"
+    networks:
+      - valkey-net
+networks:
+  valkey-net:
+    driver: bridge
